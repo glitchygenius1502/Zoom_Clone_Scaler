@@ -26,9 +26,6 @@ export default function MeetingList({ meetings = [], isLoading = false }) {
   const [now, setNow] = useState(null);
 
   useEffect(() => {
-    // Set the initial date immediately on the client browser mount
-    setNow(new Date());
-
     const timer = window.setInterval(() => {
       setNow(new Date());
     }, 1000);

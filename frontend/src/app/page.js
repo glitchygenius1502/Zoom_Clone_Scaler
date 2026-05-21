@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import ActionCard from "@/components/ActionCard";
 import MeetingList from "@/components/MeetingList";
 import Navbar from "@/components/Navbar";
@@ -78,6 +79,7 @@ function ShareIcon() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [meetings, setMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -117,12 +119,29 @@ export default function Home() {
     };
   }, []);
 
+  async function handleNewMeeting() {
+    const response = await fetch("http://localhost:8000/meetings/instant/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ host_id: 1 }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create instant meeting");
+    }
+
+    const data = await response.json();
+    router.push(`/room/${data.meeting_id}`);
+  }
+
   const actions = [
     {
       title: "New Meeting",
       iconBgColor: "bg-orange-500",
       icon: <VideoIcon />,
-      onClick: () => console.log("New Meeting clicked"),
+      onClick: handleNewMeeting,
     },
     {
       title: "Join",
