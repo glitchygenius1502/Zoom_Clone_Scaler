@@ -22,9 +22,13 @@ function formatMeetingTime(startTime) {
 }
 
 export default function MeetingList({ meetings = [], isLoading = false }) {
-  const [now, setNow] = useState(() => new Date());
+  // Initialize to null to safely match server rendering
+  const [now, setNow] = useState(null);
 
   useEffect(() => {
+    // Set the initial date immediately on the client browser mount
+    setNow(new Date());
+
     const timer = window.setInterval(() => {
       setNow(new Date());
     }, 1000);
@@ -32,34 +36,34 @@ export default function MeetingList({ meetings = [], isLoading = false }) {
     return () => window.clearInterval(timer);
   }, []);
 
-  const currentTime = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        hour: "numeric",
-        minute: "2-digit",
-      }).format(now),
-    [now],
-  );
+  const currentTime = useMemo(() => {
+    if (!now) return ""; // Fallback state while server is hydrating
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(now);
+  }, [now]);
 
-  const currentDate = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      }).format(now),
-    [now],
-  );
+  const currentDate = useMemo(() => {
+    if (!now) return ""; // Fallback state while server is hydrating
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    }).format(now);
+  }, [now]);
 
   const hasMeetings = meetings.length > 0;
 
   return (
     <aside className="flex h-full min-h-[520px] flex-col rounded-2xl bg-white p-6 shadow-md shadow-slate-200/70">
-      <div className="border-b border-slate-100 pb-6">
+      <div className="border-b border-slate-100 pb-6 min-h-[116px]">
         <p className="text-5xl font-semibold tracking-normal text-slate-950">
-          {currentTime}
+          {currentTime || "--:--"}
         </p>
-        <p className="mt-2 text-base font-medium text-slate-500">{currentDate}</p>
+        <p className="mt-2 text-base font-medium text-slate-500">
+          {currentDate || "Loading date..."}
+        </p>
       </div>
 
       <div className="mt-6 flex items-center justify-between">

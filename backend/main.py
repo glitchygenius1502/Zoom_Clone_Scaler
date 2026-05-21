@@ -8,12 +8,28 @@ from sqlalchemy.orm import Session
 
 import models
 import schemas
+from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine, get_db
-
-
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Video Conferencing Backend")
+
+
+origins = [
+    "http://localhost:3000",      # Your local Next.js dev server
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,          # Allows requests from your Next.js frontend
+    allow_credentials=True,
+    allow_methods=["*"],            # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],            # Allows all headers
+)
+
+
+
 
 MEETING_ID_LENGTH = 10
 MEETING_ID_ALPHABET = ascii_letters + digits
