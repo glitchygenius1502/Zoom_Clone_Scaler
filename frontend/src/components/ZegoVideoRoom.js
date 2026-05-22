@@ -15,17 +15,29 @@ export default function ZegoVideoRoom({ roomID }) {
 
   const myMeeting = useCallback(
     async (element) => {
+
       if (!element) {
-        zegoInstanceRef.current?.destroy();
+        try {
+          if (zegoInstanceRef.current) {
+            zegoInstanceRef.current.destroy();
+          }
+        } catch (error) {
+          // Silently catch ZegoCloud's internal DOM destruction errors
+          console.warn("ZegoCloud cleaned up in the background.");
+        }
         zegoInstanceRef.current = null;
         mountedElementRef.current = null;
         return;
       }
 
+      // 2. Prevent Double Mounting
       if (mountedElementRef.current === element) {
         return;
       }
 
+
+
+  
       mountedElementRef.current = element;
       setStatus("loading");
       setErrorMessage("");
@@ -79,7 +91,9 @@ export default function ZegoVideoRoom({ roomID }) {
             setStatus("ready");
           },
           onLeaveRoom: () => {
-            router.push("/");
+            setTimeout(() => {
+              router.push("/");
+            }, 200);  
           },
         });
       } catch (error) {
