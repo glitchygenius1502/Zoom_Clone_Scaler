@@ -138,8 +138,20 @@ export default function Home() {
     router.push(`/room/${data.meeting_id}`);
   }
 
-  function handleJoinMeeting(meetingId) {
-    router.push("/room/" + meetingId);
+  async function handleJoinMeeting(meetingId) {
+    try {
+      const response = await fetch(`http://localhost:8000/meetings/${meetingId}`);
+
+      if (response.ok) {
+        setIsJoinModalOpen(false);
+        router.push("/room/" + meetingId);
+        return;
+      }
+
+      alert("Invalid Meeting ID. Please check the code and try again.");
+    } catch {
+      alert("Unable to connect to the server.");
+    }
   }
 
   const actions = [
