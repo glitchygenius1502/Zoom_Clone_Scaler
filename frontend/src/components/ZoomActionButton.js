@@ -15,7 +15,7 @@ export default function ZoomActionButton({
       aria-label={label}
     >
       <span
-        className={`relative flex h-16 w-16 items-center justify-center rounded-full text-white shadow-lg transition-colors group-hover:bg-blue-700 group-focus:ring-2 group-focus:ring-blue-500 group-focus:ring-offset-2 ${buttonClassName}`}
+        className={`relative flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md transition-colors group-hover:bg-blue-700 group-focus:ring-2 group-focus:ring-blue-500 group-focus:ring-offset-2 ${buttonClassName}`}
       >
         {children}
 
@@ -34,7 +34,7 @@ export default function ZoomActionButton({
         )}
       </span>
 
-      <span className="mt-3 text-sm font-medium text-slate-700">{label}</span>
+      <span className="mt-2 text-sm font-medium text-slate-700">{label}</span>
     </button>
   );
 }
