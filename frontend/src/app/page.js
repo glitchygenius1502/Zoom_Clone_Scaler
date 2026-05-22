@@ -6,6 +6,7 @@ import ActionCard from "@/components/ActionCard";
 import JoinMeetingModal from "@/components/JoinMeetingModal";
 import MeetingList from "@/components/MeetingList";
 import Navbar from "@/components/Navbar";
+import ScheduleMeetingModal from "@/components/ScheduleMeetingModal";
 
 function VideoIcon() {
   return (
@@ -84,37 +85,37 @@ export default function Home() {
   const [meetings, setMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+
+  async function fetchMeetings(isActive = () => true) {
+    try {
+      const response = await fetch("http://localhost:8000/users/1/meetings");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch meetings");
+      }
+
+      const data = await response.json();
+      if (isActive()) {
+        setMeetings(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error(error);
+
+      if (isActive()) {
+        setMeetings([]);
+      }
+    } finally {
+      if (isActive()) {
+        setIsLoading(false);
+      }
+    }
+  }
 
   useEffect(() => {
     let isActive = true;
 
-    async function fetchMeetings() {
-      try {
-        const response = await fetch("http://localhost:8000/users/1/meetings");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch meetings");
-        }
-
-        const data = await response.json();
-
-        if (isActive) {
-          setMeetings(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        console.error(error);
-
-        if (isActive) {
-          setMeetings([]);
-        }
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    fetchMeetings();
+    Promise.resolve().then(() => fetchMeetings(() => isActive));
 
     return () => {
       isActive = false;
@@ -154,6 +155,36 @@ export default function Home() {
     }
   }
 
+  async function handleScheduleMeeting({ topic, date, time }) {
+    try {
+      const scheduledAt = `${date}T${time}:00`;
+      const response = await fetch("http://localhost:8000/meetings/schedule/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: topic,
+          scheduled_at: scheduledAt,
+          start_time: scheduledAt,
+          duration: 30,
+          host_id: 1,
+        }),
+      });
+
+      if (response.ok) {
+        setIsScheduleModalOpen(false);
+        await fetchMeetings();
+        alert("Meeting Scheduled!");
+        return;
+      }
+
+      alert("Failed to schedule meeting.");
+    } catch {
+      alert("Failed to schedule meeting.");
+    }
+  }
+
   const actions = [
     {
       title: "New Meeting",
@@ -171,7 +202,7 @@ export default function Home() {
       title: "Schedule",
       iconBgColor: "bg-blue-500",
       icon: <CalendarIcon />,
-      onClick: () => console.log("Schedule clicked"),
+      onClick: () => setIsScheduleModalOpen(true),
     },
     {
       title: "Share Screen",
@@ -216,6 +247,11 @@ export default function Home() {
         isOpen={isJoinModalOpen}
         onClose={() => setIsJoinModalOpen(false)}
         onJoin={handleJoinMeeting}
+      />
+      <ScheduleMeetingModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onSchedule={handleScheduleMeeting}
       />
       </div>
   );
