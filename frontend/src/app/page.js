@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ActionCard from "@/components/ActionCard";
+import JoinMeetingModal from "@/components/JoinMeetingModal";
 import MeetingList from "@/components/MeetingList";
 import Navbar from "@/components/Navbar";
 
@@ -82,6 +83,7 @@ export default function Home() {
   const router = useRouter();
   const [meetings, setMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
   useEffect(() => {
     let isActive = true;
@@ -136,6 +138,10 @@ export default function Home() {
     router.push(`/room/${data.meeting_id}`);
   }
 
+  function handleJoinMeeting(meetingId) {
+    router.push("/room/" + meetingId);
+  }
+
   const actions = [
     {
       title: "New Meeting",
@@ -147,7 +153,7 @@ export default function Home() {
       title: "Join",
       iconBgColor: "bg-blue-600",
       icon: <PlusIcon />,
-      onClick: () => console.log("Join clicked"),
+      onClick: () => setIsJoinModalOpen(true),
     },
     {
       title: "Schedule",
@@ -193,6 +199,12 @@ export default function Home() {
 
         <MeetingList meetings={meetings} isLoading={isLoading} />
       </main>
-    </div>
+
+      <JoinMeetingModal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        onJoin={handleJoinMeeting}
+      />
+      </div>
   );
 }
