@@ -138,7 +138,7 @@ export default function Home() {
 
   async function fetchMeetings(isActive = () => true) {
     try {
-      const response = await fetch("https://zoom-clone-scaler.onrender.com/users/1/meetings");
+      const response = await fetch("https://zoom-clone-scaler.onrender.com/meetings/");
 
       if (!response.ok) {
         throw new Error("Failed to fetch meetings");

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 import models
 import schemas
+from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine, get_db
 Base.metadata.create_all(bind=engine)
@@ -134,6 +135,13 @@ def schedule_meeting(
     db.refresh(meeting)
     return meeting
 
+
+
+@app.get("/meetings/", response_model=List[schemas.MeetingResponse])
+def get_all_meetings(db: Session = Depends(get_db)):
+    # This fetches all meetings from your database
+    meetings = db.query(models.Meeting).all()
+    return meetings
 
 @app.get("/meetings/{meeting_id}", response_model=schemas.MeetingResponse)
 def get_meeting(
