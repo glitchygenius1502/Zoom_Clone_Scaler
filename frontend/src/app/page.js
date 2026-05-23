@@ -138,7 +138,7 @@ export default function Home() {
 
   async function fetchMeetings(isActive = () => true) {
     try {
-      const response = await fetch("http://localhost:8000/users/1/meetings");
+      const response = await fetch("https://zoom-clone-scaler.onrender.com/users/1/meetings");
 
       if (!response.ok) {
         throw new Error("Failed to fetch meetings");
@@ -180,7 +180,7 @@ export default function Home() {
   }, []);
 
   async function handleNewMeeting() {
-    const response = await fetch("http://localhost:8000/meetings/instant/", {
+    const response = await fetch("https://zoom-clone-scaler.onrender.com/meetings/instant/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -211,7 +211,7 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/meetings/${trimmedMeetingId}`, {
+      const response = await fetch(`https://zoom-clone-scaler.onrender.com/meetings/${trimmedMeetingId}`, {
         method: "GET",
       });
 
@@ -235,7 +235,7 @@ export default function Home() {
   async function handleScheduleMeeting({ topic, description, date, time, duration }) {
     try {
       const scheduledAt = `${date}T${time}:00`;
-      const response = await fetch("http://localhost:8000/meetings/schedule/", {
+      const response = await fetch("https://zoom-clone-scaler.onrender.com/meetings/schedule/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
