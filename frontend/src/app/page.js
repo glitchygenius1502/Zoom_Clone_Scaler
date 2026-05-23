@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import JoinMeetingModal from "@/components/JoinMeetingModal";
 import ScheduleMeetingModal from "@/components/ScheduleMeetingModal";
 import ZoomActionButton from "@/components/ZoomActionButton";
 
@@ -102,8 +103,8 @@ export default function Home() {
   const router = useRouter();
   const [meetings, setMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [joinMeetingId, setJoinMeetingId] = useState("");
   const [now, setNow] = useState(null);
 
   async function fetchMeetings(isActive = () => true) {
@@ -184,6 +185,7 @@ export default function Home() {
       });
 
       if (response.ok) {
+        setIsJoinModalOpen(false);
         router.push("/room/" + trimmedMeetingId);
         return;
       }
@@ -348,7 +350,7 @@ export default function Home() {
                 <CameraIcon />
               </ZoomActionButton>
 
-              <ZoomActionButton label="Join" onClick={() => handleJoinMeeting(joinMeetingId)}>
+              <ZoomActionButton label="Join" onClick={() => setIsJoinModalOpen(true)}>
                 <PlusIcon />
               </ZoomActionButton>
 
@@ -360,21 +362,6 @@ export default function Home() {
                 <ShareIcon />
               </ZoomActionButton>
 
-              <div className="flex h-20 flex-col justify-center">
-                <input
-                  type="text"
-                  value={joinMeetingId}
-                  onChange={(event) => setJoinMeetingId(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      handleJoinMeeting(joinMeetingId);
-                    }
-                  }}
-                  placeholder="Meeting ID"
-                  className="h-9 w-36 rounded-lg border border-slate-300 bg-white px-3 text-center text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-                  aria-label="Meeting ID"
-                />
-              </div>
             </div>
 
             <div className="mt-8 grid w-full max-w-6xl gap-4 xl:grid-cols-2">
@@ -480,6 +467,11 @@ export default function Home() {
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
         onSchedule={handleScheduleMeeting}
+      />
+      <JoinMeetingModal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        onJoin={handleJoinMeeting}
       />
     </div>
   );
