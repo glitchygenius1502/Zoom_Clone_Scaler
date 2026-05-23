@@ -20,12 +20,13 @@ origins = [
     "http://127.0.0.1:3000",
 ]
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,          # Allows requests from your Next.js frontend
+    allow_origins=["*"], # Allows all origins temporarily
     allow_credentials=True,
-    allow_methods=["*"],            # Allows all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],            # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
