@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import JoinMeetingModal from "@/components/JoinMeetingModal";
+import MeetingPreviewModal from "@/components/MeetingPreviewModal";
 import ScheduleMeetingModal from "@/components/ScheduleMeetingModal";
 import ZoomActionButton from "@/components/ZoomActionButton";
 
@@ -105,6 +106,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [previewMeeting, setPreviewMeeting] = useState(null);
   const [now, setNow] = useState(null);
 
   async function fetchMeetings(isActive = () => true) {
@@ -164,11 +166,16 @@ export default function Home() {
     }
 
     const data = await response.json();
-    router.push(`/room/${data.meeting_id}`);
+    setPreviewMeeting({
+      id: data.meeting_id,
+      title: "Parth Sharma's Zoom Meeting",
+      participantName: "Parth Sharma",
+    });
   }
 
-  async function handleJoinMeeting(meetingId) {
+  async function handleJoinMeeting(meetingId, participantName = "Participant") {
     const trimmedMeetingId = meetingId.trim();
+    const trimmedName = participantName.trim() || "Participant";
 
     if (!trimmedMeetingId) {
       alert("Enter a Meeting ID to join.");
@@ -186,7 +193,11 @@ export default function Home() {
 
       if (response.ok) {
         setIsJoinModalOpen(false);
-        router.push("/room/" + trimmedMeetingId);
+        setPreviewMeeting({
+          id: trimmedMeetingId,
+          title: `${trimmedName}'s Zoom Meeting`,
+          participantName: trimmedName,
+        });
         return;
       }
 
@@ -260,6 +271,18 @@ export default function Home() {
   }, [now]);
 
   const hasMeetings = meetings.length > 0;
+
+  function handleClosePreview() {
+    setPreviewMeeting(null);
+  }
+
+  function handleStartPreviewMeeting() {
+    if (!previewMeeting?.id) {
+      return;
+    }
+
+    router.push("/room/" + previewMeeting.id);
+  }
 
   return (
     <div className="min-h-screen bg-[#e8edf3] text-slate-900">
@@ -472,6 +495,13 @@ export default function Home() {
         isOpen={isJoinModalOpen}
         onClose={() => setIsJoinModalOpen(false)}
         onJoin={handleJoinMeeting}
+      />
+      <MeetingPreviewModal
+        isOpen={Boolean(previewMeeting)}
+        meetingTitle={previewMeeting?.title}
+        participantName={previewMeeting?.participantName}
+        onClose={handleClosePreview}
+        onStart={handleStartPreviewMeeting}
       />
     </div>
   );
