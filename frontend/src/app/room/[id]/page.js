@@ -18,8 +18,21 @@ const ZegoVideoRoom = dynamic(() => import("@/components/ZegoVideoRoom"), {
 });
 
 export default function RoomPage({ params }) {
-  const { id } = use(params);
-  const roomID = String(id);
+  // 1. Unwrap params safely
+  const unwrappedParams = use(params);
+  
+  // 2. Decode the ID to strip out any hidden URL characters or spaces
+  const rawId = unwrappedParams?.id || "";
+  const roomID = decodeURIComponent(String(rawId).trim());
+
+  // 3. Prevent rendering if the ID is missing or evaluates to "undefined"
+  if (!roomID || roomID === "undefined") {
+    return (
+      <main className="flex h-screen w-screen items-center justify-center bg-black text-white">
+        Validating secure meeting route...
+      </main>
+    );
+  }
 
   return <ZegoVideoRoom roomID={roomID} />;
 }

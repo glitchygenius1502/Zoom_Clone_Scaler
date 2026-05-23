@@ -183,16 +183,15 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/meetings/join/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ meeting_id: trimmedMeetingId }),
+      // FIX: Changed to GET request and injected the ID directly into the URL
+      const response = await fetch(`http://localhost:8000/meetings/${trimmedMeetingId}`, {
+        method: "GET",
       });
 
       if (response.ok) {
         setIsJoinModalOpen(false);
+        
+        // Kept your custom preview logic completely intact
         setPreviewMeeting({
           id: trimmedMeetingId,
           title: `${trimmedName}'s Zoom Meeting`,

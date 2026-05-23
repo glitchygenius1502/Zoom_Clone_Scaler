@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
 
@@ -15,14 +15,12 @@ export default function ZegoVideoRoom({ roomID }) {
 
   const myMeeting = useCallback(
     async (element) => {
-
       if (!element) {
         try {
           if (zegoInstanceRef.current) {
             zegoInstanceRef.current.destroy();
           }
         } catch (error) {
-          // Silently catch ZegoCloud's internal DOM destruction errors
           console.warn("ZegoCloud cleaned up in the background.");
         }
         zegoInstanceRef.current = null;
@@ -30,14 +28,10 @@ export default function ZegoVideoRoom({ roomID }) {
         return;
       }
 
-      // 2. Prevent Double Mounting
       if (mountedElementRef.current === element) {
         return;
       }
 
-
-
-  
       mountedElementRef.current = element;
       setStatus("loading");
       setErrorMessage("");
@@ -47,9 +41,7 @@ export default function ZegoVideoRoom({ roomID }) {
         const serverSecret = process.env.NEXT_PUBLIC_ZEGO_SERVER_SECRET;
 
         if (!appID || !serverSecret) {
-          throw new Error(
-            "Missing NEXT_PUBLIC_ZEGO_APP_ID or NEXT_PUBLIC_ZEGO_SERVER_SECRET.",
-          );
+          throw new Error("Missing ZegoCloud Credentials in .env.local");
         }
 
         if (!userIDRef.current) {
@@ -57,13 +49,17 @@ export default function ZegoVideoRoom({ roomID }) {
         }
 
         const userID = userIDRef.current;
-        const userName = "Participant";
+        const userName = "Participant"; 
+        
+        // PROOF FOR YOUR CONSOLE: Check this to verify the ID matches the URL exactly
+        console.log("🚀 ZegoCloud Initializing for Room ID:", roomID);
+
         const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
           appID,
           serverSecret,
           roomID,
           userID,
-          userName,
+          userName
         );
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
@@ -93,20 +89,18 @@ export default function ZegoVideoRoom({ roomID }) {
           onLeaveRoom: () => {
             setTimeout(() => {
               router.push("/");
-            }, 200);  
+            }, 200);
           },
         });
       } catch (error) {
         console.error(error);
         setStatus("error");
         setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Unable to initialize the video meeting.",
+          error instanceof Error ? error.message : "Unable to initialize the video meeting."
         );
       }
     },
-    [roomID, router],
+    [roomID, router]
   );
 
   return (
@@ -121,9 +115,7 @@ export default function ZegoVideoRoom({ roomID }) {
               {roomID}
             </h1>
             <p className="mt-4 text-sm leading-6 text-zinc-400">
-              {status === "error"
-                ? errorMessage
-                : "Preparing your secure video session..."}
+              {status === "error" ? errorMessage : "Preparing your secure video session..."}
             </p>
           </div>
         </div>
