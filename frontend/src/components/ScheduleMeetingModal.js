@@ -16,8 +16,10 @@ function getCurrentTime() {
 
 export default function ScheduleMeetingModal({ isOpen, onClose, onSchedule }) {
   const [topic, setTopic] = useState("My Meeting");
+  const [description, setDescription] = useState("");
   const [date, setDate] = useState(getTodayDate);
   const [time, setTime] = useState(getCurrentTime);
+  const [duration, setDuration] = useState("30");
 
   if (!isOpen) {
     return null;
@@ -25,7 +27,7 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onSchedule }) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    onSchedule({ topic, date, time });
+    onSchedule({ topic, description, date, time, duration: Number(duration) || 30 });
   }
 
   return (
@@ -58,6 +60,23 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onSchedule }) {
           </div>
 
           <div>
+            <label
+              htmlFor="schedule-description"
+              className="mb-2 block text-sm font-bold text-slate-800"
+            >
+              Description
+            </label>
+            <textarea
+              id="schedule-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={3}
+              placeholder="Add meeting details"
+              className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
             <p className="mb-2 text-sm font-bold text-slate-800">Date & Time</p>
             <div className="flex gap-4">
               <input
@@ -75,6 +94,27 @@ export default function ScheduleMeetingModal({ isOpen, onClose, onSchedule }) {
                 aria-label="Meeting time"
               />
             </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="schedule-duration"
+              className="mb-2 block text-sm font-bold text-slate-800"
+            >
+              Duration
+            </label>
+            <select
+              id="schedule-duration"
+              value={duration}
+              onChange={(event) => setDuration(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-base text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="15">15 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="90">1 hour 30 minutes</option>
+            </select>
           </div>
         </div>
 

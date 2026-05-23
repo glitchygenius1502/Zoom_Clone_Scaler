@@ -64,6 +64,7 @@ function stopStream(stream) {
 
 export default function MeetingPreviewModal({
   isOpen,
+  meetingId,
   meetingTitle,
   participantName,
   onClose,
@@ -74,6 +75,7 @@ export default function MeetingPreviewModal({
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [cameraState, setCameraState] = useState("loading");
+  const [copyLabel, setCopyLabel] = useState("Copy invite");
 
   useEffect(() => {
     if (!isOpen) {
@@ -153,6 +155,23 @@ export default function MeetingPreviewModal({
   }
 
   const displayName = participantName || "Participant";
+  const inviteLink =
+    meetingId && typeof window !== "undefined"
+      ? `${window.location.origin}/room/${meetingId}`
+      : "";
+
+  async function handleCopyInvite(event) {
+    event.stopPropagation();
+    if (!inviteLink) return;
+
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopyLabel("Copied");
+      window.setTimeout(() => setCopyLabel("Copy invite"), 1400);
+    } catch {
+      window.prompt("Copy invite link", inviteLink);
+    }
+  }
 
   return (
     <div
@@ -274,16 +293,25 @@ export default function MeetingPreviewModal({
               </span>
             </label>
 
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onStart();
-              }}
-              className="min-w-44 rounded-xl bg-blue-600 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Start
-            </button>
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={handleCopyInvite}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-base font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
+              >
+                {copyLabel}
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onStart();
+                }}
+                className="min-w-44 rounded-xl bg-blue-600 px-8 py-3 text-lg font-bold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Start
+              </button>
+            </div>
           </div>
         </div>
       </div>

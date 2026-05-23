@@ -100,6 +100,33 @@ function formatMeetingTime(startTime) {
   }).format(date);
 }
 
+function getMeetingCode(meeting) {
+  return meeting?.meeting_id || meeting?.id;
+}
+
+function getInviteLink(meetingCode) {
+  if (!meetingCode) return "";
+  if (typeof window === "undefined") return `/room/${meetingCode}`;
+  return `${window.location.origin}/room/${meetingCode}`;
+}
+
+function parseMeetingInput(value) {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return "";
+
+  try {
+    const url = new URL(trimmedValue);
+    const roomIndex = url.pathname.split("/").findIndex((segment) => segment === "room");
+    if (roomIndex >= 0) {
+      return url.pathname.split("/")[roomIndex + 1] || "";
+    }
+  } catch {
+    return trimmedValue.split("/").filter(Boolean).pop() || trimmedValue;
+  }
+
+  return trimmedValue;
+}
+
 export default function Home() {
   const router = useRouter();
   const [meetings, setMeetings] = useState([]);
@@ -168,13 +195,14 @@ export default function Home() {
     const data = await response.json();
     setPreviewMeeting({
       id: data.meeting_id,
-      title: "Parth Sharma's Zoom Meeting",
+      title: data.title || "Parth Sharma's Zoom Meeting",
       participantName: "Parth Sharma",
     });
+    await fetchMeetings();
   }
 
   async function handleJoinMeeting(meetingId, participantName = "Participant") {
-    const trimmedMeetingId = meetingId.trim();
+    const trimmedMeetingId = parseMeetingInput(meetingId);
     const trimmedName = participantName.trim() || "Participant";
 
     if (!trimmedMeetingId) {
@@ -183,18 +211,16 @@ export default function Home() {
     }
 
     try {
-      // FIX: Changed to GET request and injected the ID directly into the URL
       const response = await fetch(`http://localhost:8000/meetings/${trimmedMeetingId}`, {
         method: "GET",
       });
 
       if (response.ok) {
+        const data = await response.json();
         setIsJoinModalOpen(false);
-        
-        // Kept your custom preview logic completely intact
         setPreviewMeeting({
           id: trimmedMeetingId,
-          title: `${trimmedName}'s Zoom Meeting`,
+          title: data.title || `${trimmedName}'s Zoom Meeting`,
           participantName: trimmedName,
         });
         return;
@@ -206,7 +232,7 @@ export default function Home() {
     }
   }
 
-  async function handleScheduleMeeting({ topic, date, time }) {
+  async function handleScheduleMeeting({ topic, description, date, time, duration }) {
     try {
       const scheduledAt = `${date}T${time}:00`;
       const response = await fetch("http://localhost:8000/meetings/schedule/", {
@@ -216,9 +242,10 @@ export default function Home() {
         },
         body: JSON.stringify({
           title: topic,
+          description: description || null,
           scheduled_at: scheduledAt,
           start_time: scheduledAt,
-          duration: 30,
+          duration,
           host_id: 1,
         }),
       });
@@ -269,7 +296,41 @@ export default function Home() {
     }).format(now);
   }, [now]);
 
-  const hasMeetings = meetings.length > 0;
+  const upcomingMeetings = useMemo(() => {
+    const referenceTime = now || new Date();
+    return meetings
+      .filter((meeting) => {
+        const meetingTime = new Date(meeting.start_time);
+        return meeting.is_scheduled && !Number.isNaN(meetingTime.getTime()) && meetingTime >= referenceTime;
+      })
+      .sort((first, second) => new Date(first.start_time) - new Date(second.start_time));
+  }, [meetings, now]);
+
+  const recentMeetings = useMemo(() => {
+    const referenceTime = now || new Date();
+    return meetings
+      .filter((meeting) => {
+        const meetingTime = new Date(meeting.start_time);
+        return !meeting.is_scheduled || Number.isNaN(meetingTime.getTime()) || meetingTime < referenceTime;
+      })
+      .sort((first, second) => new Date(second.start_time) - new Date(first.start_time))
+      .slice(0, 8);
+  }, [meetings, now]);
+
+  const hasUpcomingMeetings = upcomingMeetings.length > 0;
+  const hasRecentMeetings = recentMeetings.length > 0;
+
+  async function handleCopyInvite(meeting) {
+    const meetingCode = getMeetingCode(meeting);
+    const inviteLink = getInviteLink(meetingCode);
+
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      alert("Invite link copied.");
+    } catch {
+      window.prompt("Copy invite link", inviteLink);
+    }
+  }
 
   function handleClosePreview() {
     setPreviewMeeting(null);
@@ -366,7 +427,7 @@ export default function Home() {
               <ZoomActionButton
                 label="New meeting"
                 onClick={handleNewMeeting}
-                hasDropdown
+                
                 buttonClassName="bg-orange-600 group-hover:bg-orange-700"
               >
                 <CameraIcon />
@@ -410,16 +471,16 @@ export default function Home() {
                     </button>
                     <button type="button" className="text-xl">‹</button>
                     <button type="button" className="text-xl">›</button>
-                    {hasMeetings && (
+                    {hasUpcomingMeetings && (
                       <span className="ml-auto text-xs font-medium text-slate-500">
-                        {meetings.length} meetings
+                        {upcomingMeetings.length} upcoming
                       </span>
                     )}
                   </div>
 
-                  {hasMeetings ? (
+                  {hasUpcomingMeetings ? (
                     <div className="max-h-[300px] flex-1 space-y-2 overflow-y-auto p-4 pr-3">
-                      {meetings.map((meeting, index) => (
+                      {upcomingMeetings.map((meeting, index) => (
                         <article
                           key={meeting.id ?? `${meeting.title}-${meeting.start_time}-${index}`}
                           className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5"
@@ -429,12 +490,24 @@ export default function Home() {
                               {meeting.title || "Untitled meeting"}
                             </h3>
                             <p className="mt-1 text-xs font-medium text-slate-500">
-                              {formatMeetingTime(meeting.start_time)}
+                              {formatMeetingTime(meeting.start_time)} - {meeting.duration} min
                             </p>
+                            {meeting.description && (
+                              <p className="mt-1 truncate text-xs text-slate-500">
+                                {meeting.description}
+                              </p>
+                            )}
                           </div>
                           <button
                             type="button"
-                            onClick={() => router.push("/room/" + meeting.id)}
+                            onClick={() => handleCopyInvite(meeting)}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                          >
+                            Invite
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => router.push("/room/" + getMeetingCode(meeting))}
                             className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
                           >
                             Start
@@ -464,21 +537,49 @@ export default function Home() {
 
               <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-slate-50 px-5">
-                  <h2 className="text-base font-semibold text-slate-900">Recordings</h2>
+                  <h2 className="text-base font-semibold text-slate-900">Recent meetings</h2>
                   <button type="button" className="text-xl text-slate-600">
                     ...
                   </button>
                 </header>
-                <div className="flex min-h-[340px] flex-col items-center justify-center px-6 text-center">
-                  <EmptyRecordingsIllustration />
-                  <p className="mt-4 text-sm text-slate-600">No recorded meetings found</p>
-                  <button
-                    type="button"
-                    className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    Open recordings
-                  </button>
-                </div>
+                {hasRecentMeetings ? (
+                  <div className="max-h-[392px] min-h-[340px] space-y-2 overflow-y-auto p-4 pr-3">
+                    {recentMeetings.map((meeting, index) => (
+                      <article
+                        key={meeting.id ?? `${meeting.title}-${meeting.start_time}-${index}`}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="truncate text-sm font-semibold text-slate-900">
+                              {meeting.title || "Untitled meeting"}
+                            </h3>
+                            <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                              {meeting.is_scheduled ? "Past" : "Instant"}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs font-medium text-slate-500">
+                            {formatMeetingTime(meeting.start_time)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => router.push("/room/" + getMeetingCode(meeting))}
+                          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                          Rejoin
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-[340px] flex-col items-center justify-center px-6 text-center">
+                    <EmptyRecordingsIllustration />
+                    <p className="mt-4 text-sm text-slate-600">
+                      {isLoading ? "Loading recent meetings..." : "No recent meetings found"}
+                    </p>
+                  </div>
+                )}
               </section>
             </div>
           </section>
@@ -497,6 +598,7 @@ export default function Home() {
       />
       <MeetingPreviewModal
         isOpen={Boolean(previewMeeting)}
+        meetingId={previewMeeting?.id}
         meetingTitle={previewMeeting?.title}
         participantName={previewMeeting?.participantName}
         onClose={handleClosePreview}
